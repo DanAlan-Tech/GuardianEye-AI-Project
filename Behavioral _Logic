@@ -1,0 +1,68 @@
+<div align="center">
+
+# 🧠 Behavioral Logic Engine
+
+### Next-Generation Human Posture & Spatial Tracking
+
+<p align="center">
+  The framework separates threat intelligence into parallel tracks: structural skeletal verification and continuous spatial-temporal analytics.
+</p>
+
+---
+
+### 📊 System Architecture
+
+```text
+        SKELETAL ANALYSIS                 SPATIAL TEMPORAL LOGIC
+     
+         (O)  <- Head                      [Current Centroid]
+        / | \                              
+       /  |  \                             ├── Outside Radius ➔ Reset Clock (Walking)
+   (??)   |   (O) <- Visible Hand          └── Inside Radius  ➔ Timer Accumulates ➔ [LOITERING]
+ Hidden   |    │
+  Hand   / \   │                           [Wrist Conf < 0.4] ➔ Timer Accumulates ➔ [HIDDEN HANDS]
+        /   \  └─ Hip
+```
+
+---
+
+</div>
+
+### 🔍 Core Analytics Pipelines
+
+#### 1. 🚶‍♂️ Spatial Tracking (Pacing & Loitering)
+* **The Logic**
+  * Walking pedestrians update bounding box centroid coordinates rapidly across the image frame.
+  * Loitering or pacing targets shift back and forth within a localized pixel radius.
+* **The Implementation**
+  * The code locks a virtual anchor point (`last_position`) when someone arrives.
+  * The system computes Euclidean distance between their new position and the anchor.
+  * If the drift remains smaller than `pace_box_radius` (80 pixels), a stopwatch ticks.
+  * If they cross that threshold, they are recognized as a passing pedestrian.
+  * The clock resets instantly upon crossing the radius boundary.
+
+#### 2. 🥷 Occlusion Analytics (Hidden Hands)
+* **The Logic**
+  * Hiding hands in pockets, waistbands, or behind the back breaks camera line of sight.
+  * This physical occlusion serves as a primary indicator for weapon-concealment risks.
+* **The Implementation**
+  * YOLOv8-Pose yields a tracking coordinate `[x, y, confidence]` for 17 unique joints.
+  * The pipeline isolates Index `9` (Left Wrist) and Index `10` (Right Wrist).
+  * If an entity's physical posture blocks their hands, the neural network confidence drops.
+  * When joint tracking confidence falls below `0.4`, an independent timer triggers.
+  * If confidence stays low for more than 3 consecutive seconds, the engine flags a risk.
+
+---
+
+<div align="center">
+
+### 🛠️ Configuration Parameter Blueprint
+
+| Detection Rule | Default Threshold | Tracking Metric | Operational Trigger |
+| :--- | :--- | :--- | :--- |
+| **Loitering Area** | `80 Pixels` | Euclidean Space | Defines static zone radius |
+| **Pacing Clock** | `12.0 Seconds` | Temporal Delta | Triggers loiter threat alert |
+| **Occlusion Limit** | `< 0.4 Score` | Model Confidence | Flags broken joint visibility |
+| **Concealment Clock**| `3.0 Seconds` | Continuous Time | Triggers hidden hands warning |
+
+</div>
