@@ -4,18 +4,17 @@ from ultralytics import YOLO
 
 
 def start_security_tracker(video_source=0, alert_threshold_seconds=15):
-    # 1. Load the lightweight YOLOv8-Nano model
+
     model = YOLO("yolov8n.pt")
 
-    # 2. Initialize live camera stream
+
     cap = cv2.VideoCapture(video_source)
 
     if not cap.isOpened():
         print(f"[-] Error: Could not open video source {video_source}")
         return
 
-    # 3. ANTI-STALKING MEMORY BANK
-    # Structure: { track_id: {"first_seen": timestamp, "last_seen": timestamp} }
+
     active_tracks = {}
 
     print("[*] GuardianEye Anti-Stalking Tracker Active.")
@@ -30,8 +29,7 @@ def start_security_tracker(video_source=0, alert_threshold_seconds=15):
 
         current_time = time.time()
 
-        # 4. RASPBERRY PI OPTIMIZATION: Class Filtering
-        # 0 = person, 2 = car, 7 = truck (COCO dataset indices)
+   
         results = model.track(
             source=frame,
             tracker="bytetrack.yaml",
@@ -40,10 +38,9 @@ def start_security_tracker(video_source=0, alert_threshold_seconds=15):
             verbose=False,
         )
 
-        # Track IDs seen in *this specific frame*
         ids_in_current_frame = set()
 
-        # 5. Extract and analyze tracking targets
+    
         if results and results.boxes and results.boxes.id is not None:
             boxes = results.boxes.xyxy.cpu().numpy()
             track_ids = results.boxes.id.cpu().numpy().astype(int)
@@ -54,38 +51,38 @@ def start_security_tracker(video_source=0, alert_threshold_seconds=15):
                 x1, y1, x2, y2 = map(int, box)
                 class_name = model.names[class_id]
 
-                # --- TIME-PERSISTENCE TRACKING LOGIC ---
+           
                 if track_id not in active_tracks:
-                    # New entity discovered: log initial timestamps
+                   
                     active_tracks[track_id] = {
                         "first_seen": current_time,
                         "last_seen": current_time,
                     }
                     duration = 0.0
                 else:
-                    # Existing entity: update last seen time and calculate total duration
+                
                     active_tracks[track_id]["last_seen"] = current_time
                     duration = (
                         active_tracks[track_id]["last_seen"]
                         - active_tracks[track_id]["first_seen"]
                     )
 
-                # Assign visual colors based on threat duration
+          
                 if duration >= alert_threshold_seconds:
-                    # Flashing Red Alert box if target exceeds safety threshold
+              
                     color = (0, 0, 255)
                     label = (
                         f"⚠️ ALERT: {class_name.upper()} #{track_id} ({int(duration)}s)"
                     )
-                    # Production Note: Hook up your GPIO alarm or text notifier right here
+               
                 else:
-                    # Green for safe humans, Blue for vehicles
+                   
                     color = (
                         (0, 255, 0) if class_name == "person" else (255, 0, 0)
                     )
                     label = f"{class_name.upper()} #{track_id} ({int(duration)}s)"
 
-                # Render box and dynamic time tag onto screen
+            
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                 cv2.putText(
                     frame,
@@ -97,9 +94,7 @@ def start_security_tracker(video_source=0, alert_threshold_seconds=15):
                     2,
                 )
 
-        # 6. MEMORY CLEANUP: Flush lost tracks
-        # If an ID is missing from the frame for more than 5 seconds, remove it 
-        # so it doesn't cause false positive accumulation if seen much later.
+     
         expired_tracks = []
         for track_id, timestamps in active_tracks.items():
             if track_id not in ids_in_current_frame:
@@ -109,7 +104,7 @@ def start_security_tracker(video_source=0, alert_threshold_seconds=15):
         for track_id in expired_tracks:
             del active_tracks[track_id]
 
-        # 7. Render output stream
+
         cv2.imshow("GuardianEye AI - Live Threat Tracking", frame)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -120,5 +115,5 @@ def start_security_tracker(video_source=0, alert_threshold_seconds=15):
 
 
 if __name__ == "__main__":
-    # Test with default camera. Triggers alert if an entity follows for 15 seconds.
+
     start_security_tracker(video_source=0, alert_threshold_seconds=15)
