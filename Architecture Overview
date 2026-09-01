@@ -1,0 +1,27 @@
+                     System Architecture Overview
+
+                    [ Live Camera Feed (CSI / USB) ]
+                                       │
+                                       ▼
+                         [ GStreamer / OpenCV Pipeline ]
+                                       │
+             ┌─────────────────────────┼─────────────────────────┐
+             ▼                         ▼                         ▼
+    [ Object Detection ]      [ Pose Estimation ]       [ Object Tracking ]
+       (YOLOv8-Nano)             (YOLOv8-Pose)         (ByteTrack/DeepSORT)
+             │                         │                         │
+    Concealed Weapons &       Suspicious Behavior       Persistent Follow
+     Anomalies Detected       (Pacing, Loitering)      & Intersecting Paths
+             │                         │                         │
+             └─────────────────────────┼─────────────────────────┘
+                                       ▼
+                           [ Central Fusion Engine ]
+                                       │ (If Threat Matrix Score > Threshold)
+                                       ▼
+                         [ Edge Communications Layer ]
+                                       │
+              ┌────────────────────────┴────────────────────────┐
+              ▼                                                 ▼
+     [ BLE / Wi-Fi Alert ]                             [ LoRa Mesh Alert ]
+    (Silent Phone Haptics)                           (Off-Grid GPS Emergency)
+
